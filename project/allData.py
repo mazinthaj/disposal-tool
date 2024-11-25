@@ -107,52 +107,6 @@ class BarcodeApp:
         except:
             return datetime.max
 
-    #copying all the styles applied to a single cell
-    def copy_cell_format(self, source_cell, target_cell):
-
-        if source_cell.has_style:
-            target_cell.font = Font(
-                name=source_cell.font.name,
-                size=source_cell.font.size,
-                bold=source_cell.font.bold,
-                italic=source_cell.font.italic,
-                vertAlign=source_cell.font.vertAlign,
-                underline=source_cell.font.underline,
-                strike=source_cell.font.strike,
-                color=source_cell.font.color
-            )
-            
-            target_cell.border = Border(
-                left=Side(border_style=source_cell.border.left.style, 
-                        color=source_cell.border.left.color),
-                right=Side(border_style=source_cell.border.right.style, 
-                        color=source_cell.border.right.color),
-                top=Side(border_style=source_cell.border.top.style, 
-                        color=source_cell.border.top.color),
-                bottom=Side(border_style=source_cell.border.bottom.style, 
-                            color=source_cell.border.bottom.color)
-            )
-            
-            target_cell.fill = PatternFill(
-                fill_type=source_cell.fill.fill_type,
-                start_color=source_cell.fill.start_color,
-                end_color=source_cell.fill.end_color
-            )
-            
-            target_cell.protection = Protection(
-                locked=source_cell.protection.locked,
-                hidden=source_cell.protection.hidden
-            )
-            
-            target_cell.alignment = Alignment(
-                horizontal=source_cell.alignment.horizontal,
-                vertical=source_cell.alignment.vertical,
-                text_rotation=source_cell.alignment.text_rotation,
-                wrap_text=source_cell.alignment.wrap_text,
-                shrink_to_fit=source_cell.alignment.shrink_to_fit,
-                indent=source_cell.alignment.indent
-            )
-
     #allows user to select only excel file
     def chooseExcelFile(self):
         self.excel_path = filedialog.askopenfilename(
