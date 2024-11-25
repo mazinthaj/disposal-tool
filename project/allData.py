@@ -11,13 +11,14 @@ from PIL import Image, ImageTk
 from PIL.ExifTags import TAGS
 from datetime import datetime
 
-""" 
+"""
+To install the necessary packages, run:
 pip install pandas
 pip install tk
 pip install pyzbar
 pip install opencv-python
 pip install openpyxl
-pip install Pillow 
+pip install Pillow
 """
 
 class BarcodeApp:
@@ -75,21 +76,17 @@ class BarcodeApp:
         button.bind("<Enter>", on_enter)
         button.bind("<Leave>", on_leave)
 
-        
-    #Scans all barcodes in the image, but only sends the CODE39 barcode
     def scan_barcode(self, image):
+        """ Scans all barcodes in the image, but only returns the CODE39 barcode. """
         barcodes = pyzbar.decode(image)
-
         for barcode in barcodes:
             barcode_data = barcode.data.decode("utf-8")
-            barcode_type = barcode.type
-
-            if barcode_type == "CODE39": 
-               return True, barcode_data
+            if barcode.type == "CODE39":
+                return True, barcode_data
         return False, ""
 
-    #Gets the image creation date. If no exif data then the uploaded data is returned
     def get_image_creation_date(self, image_path):
+        """ Gets the image creation date. If no EXIF data, returns the file creation date. """
         try:
             with Image.open(image_path) as img:
                 exif = img._getexif()
@@ -101,45 +98,40 @@ class BarcodeApp:
                                 return datetime.strptime(exif[field], '%Y:%m:%d %H:%M:%S')
                             except:
                                 continue
-            
             stats = os.stat(image_path)
             return datetime.fromtimestamp(stats.st_ctime)
         except:
             return datetime.max
 
-    #allows user to select only excel file
     def chooseExcelFile(self):
+        """ Allows user to select only Excel file. """
         self.excel_path = filedialog.askopenfilename(
             title="Select a file",
-            filetypes=[
-                ("Excel files", "*.xlsx")
-            ]
+            filetypes=[("Excel files", "*.xlsx")]
         )
-        self.excel_file_path_label.config(text=f"Excel File Path:   {self.excel_path}", pady=10, font=("Arial", 10, "bold"), fg="#ffae00")
+        self.excel_file_path_label.config(text=f"Excel File Path: {self.excel_path}", pady=10, font=("Arial", 10, "bold"), fg="#ffae00")
 
-    #allows user to choose the image directory
     def browse_directory(self):
+        """ Allows user to choose the image directory. """
         self.image_directory = filedialog.askdirectory()
         if self.image_directory:
-            self.image_folder_path_label.config(text=f"Image folder Path:   {self.image_directory}", pady=10, font=("Arial", 10, "bold"), fg="#ffae00")
+            self.image_folder_path_label.config(text=f"Image folder Path: {self.image_directory}", pady=10, font=("Arial", 10, "bold"), fg="#ffae00")
 
-    #Finds the row index that contains 'HWB/SID' in the first column as this is the most important row that displays data
     def find_header_row(self, worksheet):
+        """ Finds the row index that contains 'HWB/SID' in the first column. """
         for row in range(1, worksheet.max_row + 1):
             if worksheet.cell(row=row, column=1).value == 'HWB/SID':
                 return row
         return None
 
-    #applying styles to the sheet
     def process_sheet(self, wb, sheet_name, data):
+        """ Applies styles to the sheet and updates it with image links. """
         ws = wb[sheet_name]
         header_row = self.find_header_row(ws)
-
         if header_row is None:
             tk.messagebox.showwarning("Warning", f"!!!! Could not find 'HWB/SID' column in sheet '{sheet_name}'")
             return False
 
-        # Store original cell formatting before modifying the worksheet
         original_formatting = {}
         for row in ws.iter_rows(min_row=header_row):
             for cell in row:
@@ -181,9 +173,7 @@ class BarcodeApp:
                         'number_format': cell.number_format
                     }
 
-        # Read Excel file with the correct header row for this sheet
         df = pd.read_excel(self.excel_path, sheet_name=sheet_name, header=header_row-1)
-
         df.dropna(how='all', inplace=True)
         df.drop_duplicates(inplace=True)
         df = df.dropna(subset=['HWB/SID'])
@@ -193,9 +183,8 @@ class BarcodeApp:
         if 'After' not in df.columns:
             df['After'] = None
 
-        # Update DataFrame with image links
         for index, row in df.iterrows():
-            sid_number = str(int((row['HWB/SID'])))
+            sid_number = str(int(row['HWB/SID']))
             if sid_number in data:
                 df.loc[index, 'Before'] = f'=HYPERLINK("{data[sid_number][0]}", "Click to view image")'
                 if len(data[sid_number]) > 1:
@@ -206,10 +195,8 @@ class BarcodeApp:
                 df.loc[index, 'Before'] = "IMAGE NOT FOUND"
                 df.loc[index, 'After'] = "IMAGE NOT FOUND"
 
-        #Update styling for header rows
         for col_idx, column_name in enumerate(df.columns, 1):
             cell = ws.cell(row=header_row, column=col_idx)
-            
             if (header_row, col_idx) in original_formatting:
                 orig_format = original_formatting[(header_row, col_idx)]
                 cell.font = orig_format['font']
@@ -218,17 +205,13 @@ class BarcodeApp:
                 cell.alignment = orig_format['alignment']
                 cell.protection = orig_format['protection']
                 cell.number_format = orig_format['number_format']
-            
             cell.value = column_name
 
-        #Update styling for data rows
         num = 0
         for idx, row in df.iterrows():
             current_row = header_row + 1 + idx
             for col_idx, value in enumerate(row, 1):
                 cell = ws.cell(row=current_row, column=col_idx)
-                
-                # Preserve original formatting if it existed
                 if (current_row, col_idx) in original_formatting:
                     orig_format = original_formatting[(current_row, col_idx)]
                     cell.font = orig_format['font']
@@ -238,12 +221,10 @@ class BarcodeApp:
                     cell.protection = orig_format['protection']
                     cell.number_format = orig_format['number_format']
                 else:
-                    if num <2:
+                    if num < 2:
                         ws.column_dimensions[openpyxl.utils.get_column_letter(col_idx)].width = 20
-                        num+=1
+                        num += 1
                 cell.value = value
-                
-                # Apply special formatting for hyperlinks and "IMAGE NOT FOUND"
                 if ('Before' in df.columns and col_idx == df.columns.get_loc('Before') + 1) or \
                 ('After' in df.columns and col_idx == df.columns.get_loc('After') + 1):
                     if 'HYPERLINK' in value:
@@ -253,18 +234,17 @@ class BarcodeApp:
 
         return True
 
-    """ 
-    Creates a dict data. Stores the barcode as a key and their locations in a list. Renames the files by sorting according  
-    to their creation date. Chooses the first image as before and the last image as the after.
-    Checks if the barcode is there in the excel and displays the image location.
-    """
     def process_files(self):
+        """ 
+        Creates a dict data. Stores the barcode as a key and their locations in a list. Renames the files by sorting according  
+        to their creation date. Chooses the first image as before and the last image as the after.
+        Checks if the barcode is there in the excel and displays the image location.
+        """
         data = {}
         if self.excel_path and self.image_directory:
-            # Get all image files with their dates
             image_files = []
             for file in os.listdir(self.image_directory):
-                if file.endswith((".jpg", ".png", ".jpeg")):
+                if file.lower().endswith((".jpg", ".png", ".jpeg")):
                     full_path = os.path.join(self.image_directory, file)
                     creation_date = self.get_image_creation_date(full_path)
                     image_files.append((file, creation_date))
@@ -273,13 +253,11 @@ class BarcodeApp:
                 tk.messagebox.showwarning("Warning", "!!!! No images of type .jpg, .png, .jpeg found")
                 return
 
-            # Sort by date and extract just the names
             image_files.sort(key=lambda x: x[1])
             sorted_names = [name for name, _ in image_files]
 
-            # Process images (barcode scanning part)
-            for files in sorted_names:  
-                image_path = os.path.join(self.image_directory, files)
+            for file_name in sorted_names:
+                image_path = os.path.join(self.image_directory, file_name)
                 image = cv2.imread(image_path)
                 blurred = cv2.GaussianBlur(image, (5, 5), 0)
                 gray = cv2.cvtColor(blurred, cv2.COLOR_BGR2GRAY)
@@ -287,16 +265,14 @@ class BarcodeApp:
                 
                 if flag:
                     if image_barcode not in data:
-                        new_name = os.path.join(self.image_directory, f"{image_barcode}_before{os.path.splitext(files)[1]}")
-                        os.replace(image_path, new_name)
+                        new_name = os.path.join(self.image_directory, f"{image_barcode}_before{os.path.splitext(file_name)[1]}")
+                        os.rename(image_path, new_name)
                         data[image_barcode] = [new_name]
-                        continue
-                    
-                    new_name = os.path.join(self.image_directory, f"{image_barcode}({len(data[image_barcode])})_after{os.path.splitext(files)[1]}")
-                    os.replace(image_path, new_name)
-                    data[image_barcode].append(new_name)
+                    else:
+                        new_name = os.path.join(self.image_directory, f"{image_barcode}({len(data[image_barcode])})_after{os.path.splitext(file_name)[1]}")
+                        os.rename(image_path, new_name)
+                        data[image_barcode].append(new_name)
 
-            # Process each sheet in the workbook
             wb = load_workbook(self.excel_path)
             processed_sheets = 0
             
@@ -315,6 +291,7 @@ class BarcodeApp:
     def run(self):
         self.window.mainloop()
 
-#main code ..................................................................................
-app = BarcodeApp()
-app.run()
+# Main code
+if __name__ == "__main__":
+    app = BarcodeApp()
+    app.run()
