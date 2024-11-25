@@ -33,7 +33,7 @@ class BarcodeApp:
         self.header_frame = tk.Frame(self.window, bg="#ffcc00", height=100)
         self.header_frame.pack(fill="x")
         
-        self.header_image = Image.open("project\dhl_log.png")
+        self.header_image = Image.open("project/dhl_log.png")
         self.header_image = self.header_image.resize((152, 26), Image.Resampling.LANCZOS)
         self.header_image = ImageTk.PhotoImage(self.header_image)
         
@@ -281,17 +281,19 @@ class BarcodeApp:
             for files in sorted_names:  
                 image_path = os.path.join(self.image_directory, files)
                 image = cv2.imread(image_path)
-                flag, image_barcode = self.scan_barcode(image)
+                blurred = cv2.GaussianBlur(image, (5, 5), 0)
+                gray = cv2.cvtColor(blurred, cv2.COLOR_BGR2GRAY)
+                flag, image_barcode = self.scan_barcode(gray)
                 
                 if flag:
                     if image_barcode not in data:
                         new_name = os.path.join(self.image_directory, f"{image_barcode}_before{os.path.splitext(files)[1]}")
-                        os.rename(image_path, new_name)
+                        os.replace(image_path, new_name)
                         data[image_barcode] = [new_name]
                         continue
                     
                     new_name = os.path.join(self.image_directory, f"{image_barcode}({len(data[image_barcode])})_after{os.path.splitext(files)[1]}")
-                    os.rename(image_path, new_name)
+                    os.replace(image_path, new_name)
                     data[image_barcode].append(new_name)
 
             # Process each sheet in the workbook
