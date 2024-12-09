@@ -257,12 +257,10 @@ class BarcodeApp:
 
             for f in heic_files:
                 full_path = os.path.join(self.image_directory, f)
-                
-                # Generate the target jpg path
+
                 base_path = os.path.splitext(full_path)[0]
                 jpg_path = base_path + '.jpg'
-                    
-                # Skip if converted file already exists
+
                 if os.path.exists(jpg_path):
                     processed_files.append(jpg_path)
                     continue
@@ -270,10 +268,9 @@ class BarcodeApp:
                 image = Image.open(full_path)
                 image.save(jpg_path, "JPEG")
                 processed_files.append(jpg_path)
-                
+
             processed_files.sort()
 
-            # Process images (barcode scanning part)
             i = 0
             while i < len(processed_files):
                 image = cv2.imread(processed_files[i])
@@ -281,33 +278,22 @@ class BarcodeApp:
                 gray = cv2.cvtColor(blurred, cv2.COLOR_BGR2GRAY)
 
                 flag, image_barcode = self.scan_barcode(gray)
-                
+
                 if flag:
                     new_before = os.path.join(self.image_directory, f"{image_barcode}_before.jpg")
                     os.replace(processed_files[i], new_before)
-                    
-                    # Find the next image for "after"
-                    for j in range(i+1, len(processed_files)):
-                        image_after = cv2.imread(processed_files[j])
-                        blurred_after = cv2.GaussianBlur(image_after, (5, 5), 0)
-                        gray_after = cv2.cvtColor(blurred_after, cv2.COLOR_BGR2GRAY)
 
-                        flag_after, _ = self.scan_barcode(gray_after)
-                        
-                        if flag_after:
-                            continue  # Skip if this image also has a barcode, look for the next one
-                        
+                    if i + 1 < len(processed_files):
                         new_after = os.path.join(self.image_directory, f"{image_barcode}_after.jpg")
-                        os.replace(processed_files[j], new_after)
+                        os.replace(processed_files[i + 1], new_after)
                         data[image_barcode] = [new_before, new_after]
-                        i = j  # Move to the next image after the "after" image
-                        break
+                        i += 1
                 i += 1
 
             # Process each sheet in the workbook
             wb = load_workbook(self.excel_path)
             processed_sheets = 0
-            
+
             for sheet_name in wb.sheetnames:
                 if self.process_sheet(wb, sheet_name, data):
                     processed_sheets += 1
@@ -319,6 +305,7 @@ class BarcodeApp:
                 tk.messagebox.showwarning("Warning", "!!!! No sheets were processed successfully")
         else:
             tk.messagebox.showwarning("Warning", "!!!! Please select both Excel file and image directory first")
+
 
     def run(self):
         self.window.mainloop()
