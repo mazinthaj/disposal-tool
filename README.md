@@ -1,4 +1,4 @@
-install:
+## Install:
 - pip install pandas
 - pip install tk
 - pip install pyzbar
