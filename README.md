@@ -1,11 +1,11 @@
 install:
-pip install pandas
-pip install tk
-pip install pyzbar
-pip install opencv-python
-pip install openpyxl
-pip install pillow
-pip3 install pillow-heif
+- pip install pandas
+- pip install tk
+- pip install pyzbar
+- pip install opencv-python
+- pip install openpyxl
+- pip install pillow
+- pip3 install pillow-heif
 
 ## Description
 
