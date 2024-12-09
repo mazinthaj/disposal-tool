@@ -21,27 +21,32 @@ Previously, this process was done manually. After the entire process, the user w
 - Rename the image files to `XXXXXXXXX_before` and `XXXXXXXXX_after`.
 - Type the image location into an Excel file.
 
----
+### Before:
+![image](https://github.com/user-attachments/assets/aef694e5-3de9-4ea4-a59c-02bbf5810c16)
+### After:
+![image](https://github.com/user-attachments/assets/b2d7536a-654e-46a4-b456-ab640cb5665d)
 
 ## allData.py
 
 - The waybill number in the package must be displayed in both the "before" and "after" photos.
 
----
+
 
 ## allData2.py
 
 - No need for the waybill number in the "after" photo.
 - Once a barcode is detected in the "before" photo, the system automatically marks the next image as the "after" photo.
 
----
+### Photo of the application
+![image](https://github.com/user-attachments/assets/28153081-18fc-425f-b807-214a85bf37cb)
+
 
 ## Logic Behind the Image
 
 - Example filename: `20241114_070001641_iOS.heic`
 - The numbers in the filename represent the date and time the image was taken.
 
----
+
 
 ## Conditions
 
